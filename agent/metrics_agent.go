@@ -13,6 +13,7 @@ import (
 
 	// auto registry
 	_ "flashcat.cloud/categraf/inputs/aliyun"
+	_ "flashcat.cloud/categraf/inputs/apache"
 	_ "flashcat.cloud/categraf/inputs/appdynamics"
 	_ "flashcat.cloud/categraf/inputs/arp_packet"
 	_ "flashcat.cloud/categraf/inputs/bind"
@@ -29,11 +30,14 @@ import (
 	_ "flashcat.cloud/categraf/inputs/dns_query"
 	_ "flashcat.cloud/categraf/inputs/docker"
 	_ "flashcat.cloud/categraf/inputs/elasticsearch"
+	_ "flashcat.cloud/categraf/inputs/emc_unity"
 	_ "flashcat.cloud/categraf/inputs/ethtool"
 	_ "flashcat.cloud/categraf/inputs/exec"
 	_ "flashcat.cloud/categraf/inputs/filecount"
+	_ "flashcat.cloud/categraf/inputs/gnmi"
 	_ "flashcat.cloud/categraf/inputs/googlecloud"
 	_ "flashcat.cloud/categraf/inputs/greenplum"
+	_ "flashcat.cloud/categraf/inputs/hadoop"
 	_ "flashcat.cloud/categraf/inputs/haproxy"
 	_ "flashcat.cloud/categraf/inputs/http_response"
 	_ "flashcat.cloud/categraf/inputs/influxdb"
@@ -74,6 +78,7 @@ import (
 	_ "flashcat.cloud/categraf/inputs/procstat"
 	_ "flashcat.cloud/categraf/inputs/prometheus"
 	_ "flashcat.cloud/categraf/inputs/rabbitmq"
+	_ "flashcat.cloud/categraf/inputs/redfish"
 	_ "flashcat.cloud/categraf/inputs/redis"
 	_ "flashcat.cloud/categraf/inputs/redis_sentinel"
 	_ "flashcat.cloud/categraf/inputs/rocketmq_offset"
@@ -92,6 +97,7 @@ import (
 	_ "flashcat.cloud/categraf/inputs/traffic_server"
 	_ "flashcat.cloud/categraf/inputs/vsphere"
 	_ "flashcat.cloud/categraf/inputs/whois"
+	_ "flashcat.cloud/categraf/inputs/x509_cert"
 	_ "flashcat.cloud/categraf/inputs/xskyapi"
 	_ "flashcat.cloud/categraf/inputs/zookeeper"
 )

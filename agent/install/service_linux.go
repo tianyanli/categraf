@@ -23,8 +23,8 @@ ConditionFileIsExecutable={{.Path|cmdEscape}}
 {{$dep}} {{end}}
 
 [Service]
-StandardOutput=journal+console
-StandardError=journal+console
+StandardOutput=journal
+StandardError=journal
 StartLimitInterval=3600
 StartLimitBurst=10
 ExecStart={{.Path|cmdEscape}}{{range .Arguments}} {{.|cmd}}{{end}}
@@ -183,10 +183,13 @@ func isSystemd() bool {
 	return false
 }
 
-func ServiceConfig() *service.Config {
+func ServiceConfig(userMode bool) *service.Config {
 	ServiceName := "categraf"
 	depends := []string{}
 	option := make(service.KeyValue)
+	if userMode {
+		option["UserService"] = userMode
+	}
 	if isSystemd() {
 		ServiceName = "categraf"
 		// Official doc https://www.freedesktop.org/wiki/Software/systemd/NetworkTarget/
@@ -228,5 +231,8 @@ func ServiceConfig() *service.Config {
 		log.Println("E! get exeutable path error:", err)
 	}
 	cfg.Arguments = []string{"-configs", filepath.Dir(ov) + "/conf"}
+	if userMode {
+		cfg.Arguments = append(cfg.Arguments, "-user")
+	}
 	return cfg
 }

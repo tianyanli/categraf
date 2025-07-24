@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -47,9 +46,9 @@ func RecoveryWithWriter(out io.Writer) gin.HandlerFunc {
 				// custom error
 				if e, ok := err.(errorx.PageError); ok {
 					if e.Code != 200 {
-						c.String(e.Code, i18n.Sprintf(c.GetHeader("X-Language"), e.Message))
+						c.String(e.Code, i18n.Sprintf(c.GetHeader("X-Language"), "%s", e.Message))
 					} else {
-						c.JSON(e.Code, gin.H{"err": i18n.Sprintf(c.GetHeader("X-Language"), e.Message)})
+						c.JSON(e.Code, gin.H{"err": i18n.Sprintf(c.GetHeader("X-Language"), "%s", e.Message)})
 					}
 					c.Abort()
 					return
@@ -114,7 +113,7 @@ func stack(skip int) []byte {
 		// Print this much at least.  If we can't find the source, it won't show.
 		fmt.Fprintf(buf, "%s:%d (0x%x)\n", file, line, pc)
 		if file != lastFile {
-			data, err := ioutil.ReadFile(file)
+			data, err := os.ReadFile(file)
 			if err != nil {
 				continue
 			}

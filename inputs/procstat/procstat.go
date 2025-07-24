@@ -33,6 +33,7 @@ type Instance struct {
 	SearchWinService       string   `toml:"search_win_service"`
 	SearchUser             string   `toml:"search_user"`
 	Mode                   string   `toml:"mode"`
+	GatherMD5              bool     `toml:"gather_md5"`
 	GatherTotal            bool     `toml:"gather_total"`
 	GatherPerPid           bool     `toml:"gather_per_pid"`
 	GatherMoreMetrics      []string `toml:"gather_more_metrics"`
@@ -49,6 +50,8 @@ type Instance struct {
 	searchString string
 	solarisMode  bool
 	procs        map[PID]Process
+
+	ExcludeSearchString bool `toml:"exclude_search_string"`
 }
 
 func (ins *Instance) Init() error {
@@ -155,9 +158,13 @@ func (ins *Instance) Gather(slist *types.SampleList) {
 	var (
 		pids []PID
 		err  error
-		tags = map[string]string{"search_string": ins.searchString}
+		tags = map[string]string{}
 		opts = []Filter{}
 	)
+
+	if !ins.ExcludeSearchString {
+		tags["search_string"] = ins.searchString
+	}
 
 	if ins.SearchUser != "" {
 		opts = append(opts, UserFilter(ins.SearchUser))
@@ -206,30 +213,32 @@ func (ins *Instance) Gather(slist *types.SampleList) {
 		if comm, err := p.Name(); err == nil {
 			info["comm"] = comm
 		}
-		info["binary_md5sum"] = ""
-		if cmd, err := p.Cmdline(); err == nil {
-			md5b := md5.Sum([]byte(cmd))
-			sum := hex.EncodeToString(md5b[:])
-			info["cmdline_md5sum"] = sum
-		}
-		if runtime.GOOS == "linux" {
-			if exe, err := p.Exe(); err == nil {
-				cached, ok := exeMd5cache[exe]
-				if ok {
-					info["binary_md5sum"] = cached
-				} else if sum, err := md5sum(exe); err == nil {
-					info["binary_md5sum"] = sum
-					exeMd5cache[exe] = sum
-				} else {
-					if ins.DebugMod {
-						log.Println("E! failed to get md5sum of exe:", exe, "pid:", p.PID(), err)
-					}
-					if sum, err := md5sum(fmt.Sprintf("/proc/%d/exe", pid)); err == nil {
+		if ins.GatherMD5 {
+			info["binary_md5sum"] = ""
+			if cmd, err := p.Cmdline(); err == nil {
+				md5b := md5.Sum([]byte(cmd))
+				sum := hex.EncodeToString(md5b[:])
+				info["cmdline_md5sum"] = sum
+			}
+			if runtime.GOOS == "linux" {
+				if exe, err := p.Exe(); err == nil {
+					cached, ok := exeMd5cache[exe]
+					if ok {
+						info["binary_md5sum"] = cached
+					} else if sum, err := md5sum(exe); err == nil {
 						info["binary_md5sum"] = sum
 						exeMd5cache[exe] = sum
 					} else {
 						if ins.DebugMod {
-							log.Println("E! failed to get md5sum of /proc/pid/exe:", p.PID(), err)
+							log.Println("E! failed to get md5sum of exe:", exe, "pid:", p.PID(), err)
+						}
+						if sum, err := md5sum(fmt.Sprintf("/proc/%d/exe", pid)); err == nil {
+							info["binary_md5sum"] = sum
+							exeMd5cache[exe] = sum
+						} else {
+							if ins.DebugMod {
+								log.Println("E! failed to get md5sum of /proc/pid/exe:", p.PID(), err)
+							}
 						}
 					}
 				}
@@ -521,6 +530,10 @@ func (ins *Instance) gatherLimit(slist *types.SampleList, procs map[PID]Process,
 }
 
 func (ins *Instance) gatherJvm(slist *types.SampleList, procs map[PID]Process, tags map[string]string) {
+	attachPid := false
+	if len(procs) > 1 {
+		attachPid = true
+	}
 	for pid := range procs {
 		jvmStat, err := execJstat(pid)
 		if err != nil {
@@ -528,7 +541,10 @@ func (ins *Instance) gatherJvm(slist *types.SampleList, procs map[PID]Process, t
 			continue
 		}
 
-		pidTag := map[string]string{"pid": fmt.Sprint(pid)}
+		pidTag := map[string]string{}
+		if attachPid {
+			pidTag["pid"] = fmt.Sprint(pid)
+		}
 		for k, v := range jvmStat {
 			slist.PushSample(inputName, "jvm_"+k, v, pidTag, ins.makeCmdlineLabelReggroupTag(procs[pid]), tags)
 		}
